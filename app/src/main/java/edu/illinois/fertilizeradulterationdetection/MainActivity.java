@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
         reports.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(getApplicationContext(), GalleryPictureActivity.class));
+//                startActivity(new Intent(getApplicationContext(), GalleryPictureActivity.class));
             }
         });
 
