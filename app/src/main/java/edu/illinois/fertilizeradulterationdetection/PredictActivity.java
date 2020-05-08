@@ -3,6 +3,7 @@ package edu.illinois.fertilizeradulterationdetection;
 import android.Manifest;
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -41,6 +42,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.google.gson.Gson;
 
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
@@ -289,6 +291,14 @@ public class PredictActivity extends AppCompatActivity {
             info.setLatitude(location.getLatitude());
             info.setLongitude(location.getLongitude());
         }
+
+        // Save Image internally
+        SharedPreferences mPrefs = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor prefsEditor = mPrefs.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(image);
+        prefsEditor.putString("MyObject", json);
+        prefsEditor.commit();
 
         // Save info to database
         String storeName = getIntent().getStringExtra("storeName");

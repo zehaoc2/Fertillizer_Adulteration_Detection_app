@@ -27,33 +27,6 @@ public class Store {
     }
     public ArrayList<Image> getImages(){ return images; }
 
-    public static ArrayList<Store> getInstances() {
-        final ArrayList<Store> storeInstances = new ArrayList<Store>();
-
-        //add instances to contacts ArrayList
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
-        ref = ref.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).child("images");
-
-        ref.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                for (DataSnapshot store : dataSnapshot.getChildren()) {
-                    Store str = store.getValue(Store.class);
-                    storeInstances.add(str);
-//                    for (DataSnapshot instance : store.getChildren()){
-//                        Image img = instance.getValue(Image.class);
-//                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-        return storeInstances;
-    }
-
     public String getName() { return name; }
+    public String getDistrict() { return district; }
 }

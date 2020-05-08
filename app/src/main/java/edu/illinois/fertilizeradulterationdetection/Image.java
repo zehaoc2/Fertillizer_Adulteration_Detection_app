@@ -17,12 +17,13 @@ public class Image {
         imagePath = "";
     }
 
-    public Image(double longitude, double latitude, String date, String prediction, String note){
+    public Image(double longitude, double latitude, String date, String prediction, String note, String imagePath) {
         this.longitude = longitude;
         this.latitude = latitude;
         this.date = date;
         this.prediction = prediction;
         this.note = note;
+        this.imagePath = imagePath;
     }
 
     public void setNote(String note) {
