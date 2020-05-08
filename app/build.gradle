@@ -50,4 +50,9 @@ dependencies {
 
     // meta-data extractor
     implementation 'com.drewnoakes:metadata-extractor:2.13.0'
-}
+
+    //recycler view
+    implementation 'androidx.recyclerview:recyclerview:1.1.0'
+
+    //gson
+    implementation 'com.google.code.gson:gson:2.8.5'}

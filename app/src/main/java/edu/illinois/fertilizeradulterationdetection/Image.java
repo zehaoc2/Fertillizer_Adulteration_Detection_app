@@ -1,11 +1,29 @@
 package edu.illinois.fertilizeradulterationdetection;
 
-public class ImageInfo {
+public class Image {
     private double longitude;
     private double latitude;
     private String date;
     private String prediction;
     private String note;
+    private String imagePath;
+
+    public Image(){
+        longitude = 0;
+        latitude = 0;
+        date = "";
+        prediction = "";
+        note = "";
+        imagePath = "";
+    }
+
+    public Image(double longitude, double latitude, String date, String prediction, String note){
+        this.longitude = longitude;
+        this.latitude = latitude;
+        this.date = date;
+        this.prediction = prediction;
+        this.note = note;
+    }
 
     public void setNote(String note) {
         this.note = note;
