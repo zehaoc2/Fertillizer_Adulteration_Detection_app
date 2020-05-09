@@ -26,6 +26,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -48,6 +49,8 @@ public class InfoActivity extends AppCompatActivity {
     private String id;
     private DatabaseReference databaseRef;
     private String storeName;
+
+    private Intent intent;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -96,8 +99,8 @@ public class InfoActivity extends AppCompatActivity {
         // store selection
         existingStoreView = findViewById(R.id.existingStore);
 
-        id = getIntent().getStringExtra("username");
-        id = "q";
+        id = FirebaseAuth.getInstance().getCurrentUser().getUid();
+//        id = "q";
         databaseRef = FirebaseDatabase.getInstance().getReference();
 
         RetrieveSavedStores();
@@ -110,10 +113,11 @@ public class InfoActivity extends AppCompatActivity {
                 EditText noteView = findViewById(R.id.note_text);
                 String note = noteView.getText().toString();
 
-                Intent intent = new Intent(getApplicationContext(), PredictActivity.class);
+                intent = new Intent(getApplicationContext(), PredictActivity.class);
                 intent.putExtra("uri", getIntent().getStringExtra("uri"));
-                intent.putExtra("username", getIntent().getStringExtra("username"));
+//                intent.putExtra("username", getIntent().getStringExtra("username"));
                 intent.putExtra("isFromStorage", getIntent().getBooleanExtra("isFromStorage", false));
+
 
                 intent.putExtra("note", note);
 
@@ -148,6 +152,7 @@ public class InfoActivity extends AppCompatActivity {
             newStoreView.setVisibility(View.VISIBLE);
             existingStoreView.setVisibility(View.GONE);
             toPrediction.setVisibility(View.VISIBLE);
+            intent.putExtra("newStore", true);
         }
     }
 
@@ -171,6 +176,7 @@ public class InfoActivity extends AppCompatActivity {
                     @Override
                     public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                         storeName = (String) adapterView.getItemAtPosition(i);
+                        intent.putExtra("newStore", false);
                     }
 
                     @Override

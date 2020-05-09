@@ -16,6 +16,10 @@ public class Store {
     private String name, district;
     private ArrayList<Image> images;
 
+    public Store(String name, String district){
+        this(name, district, new ArrayList<Image>());
+    }
+
     public Store(String name, String district, ArrayList<Image> images){
         this.name = name;
         this.district = district;

@@ -43,6 +43,8 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
 
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
@@ -262,9 +264,9 @@ public class PredictActivity extends AppCompatActivity {
         progressDialog.show();
 
         // Create info object
-        Image info = new Image();
-        info.setPrediction(prediction);
-        info.setNote(getIntent().getStringExtra("note"));
+        Image img = new Image();
+        img.setPrediction(prediction);
+        img.setNote(getIntent().getStringExtra("note"));
 
         // Retrieve image metadata
         image = new File(imagePath);
@@ -281,37 +283,52 @@ public class PredictActivity extends AppCompatActivity {
         ExifSubIFDDirectory exifSubIFDDirectory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
         if (exifSubIFDDirectory != null) {
             String date = exifSubIFDDirectory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL).toString();
-            info.setDate(date);
+            img.setDate(date);
         }
 
         // longitude & latitude
         GpsDirectory gpsDirectory = metadata.getFirstDirectoryOfType(GpsDirectory.class);
         if (gpsDirectory != null) {
             GeoLocation location = gpsDirectory.getGeoLocation();
-            info.setLatitude(location.getLatitude());
-            info.setLongitude(location.getLongitude());
+            img.setLatitude(location.getLatitude());
+            img.setLongitude(location.getLongitude());
         }
 
-        // Save Image internally
-        SharedPreferences mPrefs = getPreferences(MODE_PRIVATE);
+        // ========== Save Image internally ========== //
+        boolean newStore = getIntent().getBooleanExtra("newStore", true);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create(); // pretty print JSON
+        SharedPreferences mPrefs = getSharedPreferences("fertilizer_test_data", MODE_PRIVATE);
+        Store str;
+
+        //new Store
+        if(newStore){
+            str = new Store(storeName, district);
+        }
+        //old store
+        else{
+            String json = mPrefs.getString(storeName, null);
+            str = gson.fromJson(json, Store.class);
+        }
+        str.addImage(img);
+        String jsonString = gson.toJson(str, Store.class);
+        //save to SharedPreferences
         SharedPreferences.Editor prefsEditor = mPrefs.edit();
-        Gson gson = new Gson();
-        String json = gson.toJson(image);
-        prefsEditor.putString("MyObject", json);
+        prefsEditor.putString(storeName, jsonString);
+        System.out.println(jsonString);
         prefsEditor.commit();
 
-        // Save info to database
-        String storeName = getIntent().getStringExtra("storeName");
+        // ========== Save to Firebase ========== //
+//        String storeName = getIntent().getStringExtra("storeName");
 //        assert storeName != null;
         DatabaseReference images = databaseRef.child(id).child("images").child(storeName);
 
-        if (getIntent().hasExtra("District")) {
-            images.child("district").setValue(getIntent().getStringExtra("District"));
-            images.child("village").setValue(getIntent().getStringExtra("Village"));
-        }
+//        if (getIntent().hasExtra("District")) {
+//            images.child("district").setValue(getIntent().getStringExtra("District"));
+//            images.child("village").setValue(getIntent().getStringExtra("Village"));
+//        }
 
         String imageId = images.push().getKey();
-        images.child(Objects.requireNonNull(imageId)).setValue(info);
+        images.child(Objects.requireNonNull(imageId)).setValue(img);
 
         // Save image to storage
         StorageReference storageRef = FirebaseStorage.getInstance().getReference().child(imageId);

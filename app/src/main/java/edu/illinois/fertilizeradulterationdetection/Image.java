@@ -17,6 +17,10 @@ public class Image {
         imagePath = "";
     }
 
+    public Image(String date, String prediction, String note, String imagePath){
+        this(0,0,date, prediction, note, imagePath);
+    }
+
     public Image(double longitude, double latitude, String date, String prediction, String note, String imagePath) {
         this.longitude = longitude;
         this.latitude = latitude;
