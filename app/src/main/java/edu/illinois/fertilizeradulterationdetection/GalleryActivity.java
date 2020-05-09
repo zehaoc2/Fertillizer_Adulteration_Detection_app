@@ -4,8 +4,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
+
+import java.io.FileReader;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Map;
 
 
 public class GalleryActivity extends AppCompatActivity {
@@ -20,7 +29,15 @@ public class GalleryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        stores = new ArrayList<>();
+        SharedPreferences sharedPreferences = getSharedPreferences("fertilizer_test_data", MODE_PRIVATE);
+        Gson gson = new Gson();
+        Type storeMapType = new TypeToken<Map<String, Store>>() {}.getType();
+        Map<String, Store> storeMap = gson.fromJson(sharedPreferences.toString(), storeMapType);
+        for(Map.Entry<String, Store> tmp : storeMap.entrySet()){
+            stores.add(tmp.getValue());
+        }
+
+        buildRecyclerView();
     }
 
     public void buildRecyclerView() {

@@ -45,6 +45,7 @@ import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.reflect.TypeToken;
 
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
@@ -59,6 +60,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Type;
 import java.nio.MappedByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -307,9 +309,11 @@ public class PredictActivity extends AppCompatActivity {
         //old store
         else{
             String json = mPrefs.getString(storeName, null);
-            str = gson.fromJson(json, Store.class);
+            Type type = new TypeToken<Store>() {}.getType();
+            str = gson.fromJson(json, type);
         }
         str.addImage(img);
+
         String jsonString = gson.toJson(str, Store.class);
         //save to SharedPreferences
         SharedPreferences.Editor prefsEditor = mPrefs.edit();
