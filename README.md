@@ -26,7 +26,7 @@ This activity allows users to enter user-specific metadata, including note, stor
 
 ### PredictActivity
 
-This activity predicts the input photo as adulterated or pure fertilizer and provides the options of saving and generating reports.
+This activity predicts the input photo as adulterated or pure fertilizer and provides the options of saving the result and generating reports.
 
 ## UserProfile
 
