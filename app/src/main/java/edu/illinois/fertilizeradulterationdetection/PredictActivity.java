@@ -44,7 +44,6 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
 import org.tensorflow.lite.DataType;
@@ -77,12 +76,11 @@ public class PredictActivity extends AppCompatActivity {
     private Uri uri;
     private String imagePath;
 
-    private ProgressDialog progressDialog;
     private String id;
     private DatabaseReference databaseRef;
     private String prediction;
 
-    private String storeName, district;
+    private String store, district, village;
 
     private Interpreter tflite;
     private TensorImage tImage;
@@ -93,15 +91,40 @@ public class PredictActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_predict);
 
-        progressDialog = new ProgressDialog(this);
+        initialization();
 
+        // model preprocessing
+        final ArrayList<Bitmap> images = splitImage();
+
+        // split image test code
+//        Button button = findViewById(R.id.button);
+//        button.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Bitmap image = images.get(count);
+//                ImageView imageView = findViewById(R.id.image);
+//                imageView.setImageBitmap(image);
+//                count = (count + 1) % 12;
+//            }
+//        });
+
+        // initialize model & predict
+        initializeModel();
+        prediction = predict() ? "Adulterated" : "Pure";
+
+        TextView predView = findViewById(R.id.prediction);
+        predView.setText(prediction);
+    }
+
+    private void initialization() {
+        // retrieve data from previous activity
         Intent intent = getIntent();
+        store = intent.getStringExtra("Store");
+        district = intent.getStringExtra("District");
+        village = intent.getStringExtra("Village");
+        uri = Uri.parse(intent.getStringExtra("uri"));
 
-        storeName = intent.getStringExtra("storeName");
-        district = intent.getStringExtra("district");
-
-        // uri & image bitmap
-        uri = Uri.parse(getIntent().getStringExtra("uri"));
+        // background image
         try {
             bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
             ImageView imageView = findViewById(R.id.image);
@@ -110,7 +133,7 @@ public class PredictActivity extends AppCompatActivity {
             Toast.makeText(this, "Failed to load image", Toast.LENGTH_LONG).show();
         }
 
-        // get image path
+        // get image path of the photo in the phone
         boolean isFromStorage = getIntent().getBooleanExtra("isFromStorage", false);
         if (isFromStorage) {
             imagePath = getRealPathFromURI(uri);
@@ -118,7 +141,7 @@ public class PredictActivity extends AppCompatActivity {
             imagePath = uri.getPath();
         }
 
-        // save button
+        // button initialization
         Button save = findViewById(R.id.save);
         save.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -127,8 +150,6 @@ public class PredictActivity extends AppCompatActivity {
             }
         });
 
-
-        // report button
         Button report = findViewById(R.id.report);
         report.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -141,33 +162,41 @@ public class PredictActivity extends AppCompatActivity {
             }
         });
 
-        //Initialize firebase & retrieve data
+        // firebase initialize
         id = FirebaseAuth.getInstance().getCurrentUser().getUid();
-//        id = "q";
         databaseRef = FirebaseDatabase.getInstance().getReference();
+    }
 
-        // model preprocessing
-        final ArrayList<Bitmap> images = splitImage();
+    //code from stackOverflow: https://stackoverflow.com/a/23920731/12234267
+    private String getRealPathFromURI(Uri uri) {
 
-        // TODO: test split image
-//        Button button = findViewById(R.id.button);
-//        button.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Bitmap image = images.get(count);
-//                ImageView imageView = findViewById(R.id.image);
-//                imageView.setImageBitmap(image);
-//                count = (count + 1) % 12;
-//            }
-//        });
+        String filePath = "";
+        String wholeID = DocumentsContract.getDocumentId(uri);
 
-        // run model & predict
-        initializeModel();
+        String id = wholeID.split(":")[1];
+        String[] column = {MediaStore.Images.Media.DATA};
 
-        prediction = predict() ? "Adulterated" : "Pure";
+        String sel = MediaStore.Images.Media._ID + "=?";
+        Cursor cursor = this.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                column, sel, new String[]{id}, null);
 
-        TextView predView = findViewById(R.id.prediction);
-        predView.setText(prediction);
+        assert cursor != null;
+        int columnIndex = cursor.getColumnIndex(column[0]);
+
+        if (cursor.moveToFirst()) {
+            filePath = cursor.getString(columnIndex);
+        }
+        cursor.close();
+        return filePath;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == WRITE_EXTERNAL_STORAGE_CODE) {
+            generateReport();
+        }
     }
 
     /** ======================================= Model ================================================ **/
@@ -234,34 +263,9 @@ public class PredictActivity extends AppCompatActivity {
 
     /** ====================================== Save to Database ================================================= **/
 
-    private String getRealPathFromURI(Uri uri) {
-
-        String filePath = "";
-        String wholeID = DocumentsContract.getDocumentId(uri);
-
-        // Split at colon, use second item in the array
-        String id = wholeID.split(":")[1];
-
-        String[] column = {MediaStore.Images.Media.DATA};
-
-        // where id is equal to
-        String sel = MediaStore.Images.Media._ID + "=?";
-
-        Cursor cursor = this.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                column, sel, new String[]{id}, null);
-
-        assert cursor != null;
-        int columnIndex = cursor.getColumnIndex(column[0]);
-
-        if (cursor.moveToFirst()) {
-            filePath = cursor.getString(columnIndex);
-        }
-        cursor.close();
-        return filePath;
-    }
-
     private void saveImageAttr() {
 
+        final ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Uploading Image...");
         progressDialog.show();
 
@@ -272,7 +276,6 @@ public class PredictActivity extends AppCompatActivity {
 
         // Retrieve image metadata
         image = new File(imagePath);
-
         Metadata metadata = null;
         try {
             metadata = ImageMetadataReader.readMetadata(image);
@@ -304,11 +307,11 @@ public class PredictActivity extends AppCompatActivity {
 
         //new Store
         if(newStore){
-            str = new Store(storeName, district);
+            str = new Store(store, district);
         }
         //old store
         else{
-            String json = mPrefs.getString(storeName, null);
+            String json = mPrefs.getString(store, null);
             Type type = new TypeToken<Store>() {}.getType();
             str = gson.fromJson(json, type);
         }
@@ -317,24 +320,23 @@ public class PredictActivity extends AppCompatActivity {
         String jsonString = gson.toJson(str, Store.class);
         //save to SharedPreferences
         SharedPreferences.Editor prefsEditor = mPrefs.edit();
-        prefsEditor.putString(storeName, jsonString);
+        prefsEditor.putString(store, jsonString);
         System.out.println(jsonString);
         prefsEditor.commit();
 
         // ========== Save to Firebase ========== //
-//        String storeName = getIntent().getStringExtra("storeName");
-//        assert storeName != null;
-        DatabaseReference images = databaseRef.child(id).child("images").child(storeName);
+        // save metadata to database
+        DatabaseReference images = databaseRef.child(id).child("images").child(store);
 
-//        if (getIntent().hasExtra("District")) {
-//            images.child("district").setValue(getIntent().getStringExtra("District"));
-//            images.child("village").setValue(getIntent().getStringExtra("Village"));
-//        }
+        if (getIntent().hasExtra("District")) {
+            images.child("district").setValue(district);
+            images.child("village").setValue(village);
+        }
 
         String imageId = images.push().getKey();
         images.child(Objects.requireNonNull(imageId)).setValue(img);
 
-        // Save image to storage
+        // save image to storage
         StorageReference storageRef = FirebaseStorage.getInstance().getReference().child(imageId);
         storageRef.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
@@ -357,15 +359,6 @@ public class PredictActivity extends AppCompatActivity {
             }
         });
 
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == WRITE_EXTERNAL_STORAGE_CODE) {
-            generateReport();
-        }
     }
 
     /** ====================================== Generate Report ================================================= **/
@@ -398,7 +391,7 @@ public class PredictActivity extends AppCompatActivity {
         tPaint.setStyle(Paint.Style.FILL);
         height = tPaint.measureText("yY");
         tPaint.setColor(Color.WHITE);
-        cs.drawText("district: " + district + "   store: " + storeName, (src.getWidth() - tPaint.measureText("district: " + district + "   store: " + storeName))/2, src.getHeight()-3*150, tPaint);
+        cs.drawText("district: " + district + "   store: " + store, (src.getWidth() - tPaint.measureText("district: " + district + "   store: " + store))/2, src.getHeight()-3*150, tPaint);
 
         //write date
         tPaint.setStyle(Paint.Style.FILL);
@@ -413,7 +406,6 @@ public class PredictActivity extends AppCompatActivity {
             String imgSaved = MediaStore.Images.Media.insertImage(getContentResolver(), dest,imagePath+".png", "drawing");
             Toast.makeText(this, "Report Saved",Toast.LENGTH_LONG).show();
 
-            //TODO: Lily - we'll discuss what to do after the prediction
 //            Intent intent = new Intent(this, MainActivity.class);
 //            startActivity(intent);
         } catch (FileNotFoundException e) {
@@ -425,7 +417,7 @@ public class PredictActivity extends AppCompatActivity {
 }
 
 
-/** access gps location code
+/** code for access gps location
  *
  * if (ActivityCompat.checkSelfPermission(PredictActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(PredictActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
  * if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {

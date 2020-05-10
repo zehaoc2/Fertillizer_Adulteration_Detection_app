@@ -2,7 +2,6 @@ package edu.illinois.fertilizeradulterationdetection;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -11,10 +10,8 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -35,10 +32,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 public class InfoActivity extends AppCompatActivity {
 
@@ -52,41 +46,25 @@ public class InfoActivity extends AppCompatActivity {
 
     private Intent intent;
 
+
     @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_info);
 
-        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        assert inflater != null;
+        initialization();
+        retrieveSavedStores();
+    }
 
+    private void initialization() {
         newStoreView = findViewById(R.id.newStore);
+        existingStoreView = findViewById(R.id.existingStore);
 
-        final List<String> labels = new ArrayList<>(Arrays.asList("District", "Village", "Store"));
-        final List<Integer> ids = new ArrayList<>();
+        id = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        databaseRef = FirebaseDatabase.getInstance().getReference();
 
-        for (int i = 0; i < 3; i++) {
-            @SuppressLint("InflateParams") View custom = inflater.inflate(R.layout.template_label_edittext, null);
-
-
-            TextView tv = custom.findViewById(R.id.label);
-            tv.setText(labels.get(i) + ": ");
-
-            // todo: id added to ids list is 1, 2, 3, which are wrong
-            int id = View.generateViewId();
-            Log.e("idd", "id: " + ids.get(i).toString());
-            ids.add(id);
-            tv.setId(id);
-
-            newStoreView.addView(custom);
-        }
-
-        for (int i = 0; i < 3; i++) {
-            Log.e("idd", ids.get(i).toString());
-        }
-
-        // background image
+        // set up background image
         Uri uri = Uri.parse(getIntent().getStringExtra("uri"));
         try {
             Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
@@ -96,37 +74,43 @@ public class InfoActivity extends AppCompatActivity {
             Toast.makeText(this, "Fail to load image",Toast.LENGTH_LONG).show();
         }
 
-        // store selection
-        existingStoreView = findViewById(R.id.existingStore);
+        // inflater is used to inflate district, village and store text field into its parent view. Please refer to template_label_edittext.xml for details about "custom" view
+        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        final List<String> labels = new ArrayList<>(Arrays.asList("District", "Village", "Store"));
+        final List<Integer> ids = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            assert inflater != null;
+            @SuppressLint("InflateParams") View custom = inflater.inflate(R.layout.template_label_edittext, null);
 
-        id = FirebaseAuth.getInstance().getCurrentUser().getUid();
-//        id = "q";
-        databaseRef = FirebaseDatabase.getInstance().getReference();
+            TextView tv = custom.findViewById(R.id.label);
+            tv.setText(labels.get(i) + ": ");
 
-        RetrieveSavedStores();
+            EditText et = custom.findViewById(R.id.text);
+            int id = View.generateViewId();
+            ids.add(id);
+            et.setId(id);
 
-        // toPrediction button
+            newStoreView.addView(custom);
+        }
+
+        //pass info to prediction
+        intent = new Intent(getApplicationContext(), PredictActivity.class);
         toPrediction = findViewById(R.id.to_prediction);
         toPrediction.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                EditText noteView = findViewById(R.id.note_text);
-                String note = noteView.getText().toString();
-
-                intent = new Intent(getApplicationContext(), PredictActivity.class);
+                // relay extras from previous activity
                 intent.putExtra("uri", getIntent().getStringExtra("uri"));
-//                intent.putExtra("username", getIntent().getStringExtra("username"));
                 intent.putExtra("isFromStorage", getIntent().getBooleanExtra("isFromStorage", false));
 
-
-                intent.putExtra("note", note);
+                // pass new extras obtained in this activity
+                EditText noteView = findViewById(R.id.note_text);
+                intent.putExtra("note", noteView.getText().toString());
 
                 if (storeName == null) {
-                    //TODO: check valid store name & district name
                     for (int i = 0; i < 3; i++) {
-                        EditText v = findViewById(ids.get(i));
+                        EditText v = findViewById(ids.get(i)); //TODO: check valid store, district, village name, i.e. field value should not be empty
                         intent.putExtra(labels.get(i), v.getText().toString());
-                        Toast.makeText(getApplicationContext(), v.getText().toString(), Toast.LENGTH_LONG).show();
                     }
                 } else {
                     intent.putExtra("Store", storeName);
@@ -135,10 +119,7 @@ public class InfoActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
-
     }
-
-    /** ===================================== Store Selection ================================================== **/
 
     public void checkButton(View V) {
         RadioGroup radioGroup = findViewById(R.id.radio);;
@@ -156,7 +137,7 @@ public class InfoActivity extends AppCompatActivity {
         }
     }
 
-    private void RetrieveSavedStores() {
+    private void retrieveSavedStores() {
         databaseRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
