@@ -14,20 +14,19 @@ To install the app, please download the [apk file](https://drive.google.com/file
 
 ### MainActivity
 
-
+This activity allows users to upload a photo by choosing a photo from the gallery, or by taking a photo from the phone's camera.
 
 ### InstructionActivity
 
-
+This activity instructs users on how to take good-quality photos for better prediction accuracy.
 
 ### InfoActivity
 
+This activity allows users to enter user-specific metadata, including note, store, village, and district.
 
 ### PredictActivity
 
-This file predicts the input photo as adulterated or pure fertilizer, and provides the options of saving and generating reports.
-
-![PredictActivity](https://drive.google.com/file/d/1xG2Bka8g3MxstWkoro40NIIEYMcRvaIM/view?usp=sharing) 
+This activity predicts the input photo as adulterated or pure fertilizer and provides the options of saving and generating reports.
 
 ## UserProfile
 
