@@ -1,4 +1,4 @@
-package edu.illinois.fertilizeradulterationdetection;
+package edu.illinois.fertilizeradulterationdetection.entity;
 
 import java.util.ArrayList;
 

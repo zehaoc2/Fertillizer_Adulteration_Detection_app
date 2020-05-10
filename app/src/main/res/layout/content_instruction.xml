@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="edu.illinois.fertilizeradulterationdetection.InstructionActivity"
+    tools:context="edu.illinois.fertilizeradulterationdetection.prediction.InstructionActivity"
     tools:showIn="@layout/activity_instruction">
 
     <LinearLayout

@@ -1,16 +1,17 @@
-package edu.illinois.fertilizeradulterationdetection;
+package edu.illinois.fertilizeradulterationdetection.userProfile;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+
+import edu.illinois.fertilizeradulterationdetection.R;
+import edu.illinois.fertilizeradulterationdetection.entity.Store;
 
 public class GalleryAdapter extends RecyclerView.Adapter<GalleryAdapter.ItemView>{
     private ArrayList<Store> instances;

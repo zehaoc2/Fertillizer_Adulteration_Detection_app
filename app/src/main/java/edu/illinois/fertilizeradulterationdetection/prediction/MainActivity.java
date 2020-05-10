@@ -1,7 +1,6 @@
-package edu.illinois.fertilizeradulterationdetection;
+package edu.illinois.fertilizeradulterationdetection.prediction;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
@@ -18,10 +17,11 @@ import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.Button;
-import android.widget.Gallery;
 import android.widget.ImageButton;
 
 import java.io.File;
+
+import edu.illinois.fertilizeradulterationdetection.R;
 
 public class MainActivity extends AppCompatActivity {
     private final int PICK_IMAGE = 1;

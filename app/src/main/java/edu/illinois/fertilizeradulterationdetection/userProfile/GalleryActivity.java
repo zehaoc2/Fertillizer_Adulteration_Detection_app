@@ -1,4 +1,4 @@
-package edu.illinois.fertilizeradulterationdetection;
+package edu.illinois.fertilizeradulterationdetection.userProfile;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -8,13 +8,14 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.FileReader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Map;
+
+import edu.illinois.fertilizeradulterationdetection.R;
+import edu.illinois.fertilizeradulterationdetection.entity.Store;
 
 
 public class GalleryActivity extends AppCompatActivity {

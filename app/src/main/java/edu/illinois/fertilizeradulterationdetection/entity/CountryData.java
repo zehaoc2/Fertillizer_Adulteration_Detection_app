@@ -1,4 +1,4 @@
-package edu.illinois.fertilizeradulterationdetection;
+package edu.illinois.fertilizeradulterationdetection.entity;
 
 public class CountryData {
     public static final String[] countryNames = { "Tanzania", "United States"};

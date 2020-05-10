@@ -1,27 +1,19 @@
-package edu.illinois.fertilizeradulterationdetection;
+package edu.illinois.fertilizeradulterationdetection.userProfile;
 
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.os.Environment;
-import android.os.StrictMode;
-import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageButton;
 
 import com.google.firebase.auth.FirebaseAuth;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import edu.illinois.fertilizeradulterationdetection.prediction.MainActivity;
+import edu.illinois.fertilizeradulterationdetection.R;
 
 public class InitActivity extends AppCompatActivity {
 

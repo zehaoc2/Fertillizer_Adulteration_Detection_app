@@ -1,4 +1,4 @@
-package edu.illinois.fertilizeradulterationdetection;
+package edu.illinois.fertilizeradulterationdetection.prediction;
 
 import android.Manifest;
 import android.app.ProgressDialog;
@@ -66,6 +66,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
+
+import edu.illinois.fertilizeradulterationdetection.R;
+import edu.illinois.fertilizeradulterationdetection.entity.Image;
+import edu.illinois.fertilizeradulterationdetection.entity.Store;
 
 public class PredictActivity extends AppCompatActivity {
 

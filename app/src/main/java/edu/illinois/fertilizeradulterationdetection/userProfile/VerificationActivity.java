@@ -1,4 +1,4 @@
-package edu.illinois.fertilizeradulterationdetection;
+package edu.illinois.fertilizeradulterationdetection.userProfile;
 
 import android.content.Intent;
 
@@ -22,6 +22,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.concurrent.TimeUnit;
+
+import edu.illinois.fertilizeradulterationdetection.prediction.MainActivity;
+import edu.illinois.fertilizeradulterationdetection.R;
+import edu.illinois.fertilizeradulterationdetection.entity.User;
 
 public class VerificationActivity extends AppCompatActivity {
 
