@@ -121,7 +121,8 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (resultCode == RESULT_OK) {
-            Intent intent = new Intent(this, InfoActivity.class);
+//            Intent intent = new Intent(this, InfoActivity.class);
+            Intent intent = new Intent(this, PredictActivity.class);
 
             if (requestCode == PICK_IMAGE) {
                 uri = data.getData();

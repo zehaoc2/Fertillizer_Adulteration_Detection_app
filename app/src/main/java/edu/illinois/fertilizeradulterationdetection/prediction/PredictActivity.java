@@ -89,6 +89,7 @@ public class PredictActivity extends AppCompatActivity {
     private Interpreter tflite;
     private TensorImage tImage;
     private TensorBuffer probabilityBuffer;
+    private ImageProcessor imageProcessor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,7 +115,17 @@ public class PredictActivity extends AppCompatActivity {
 
         // initialize model & predict
         initializeModel();
-        prediction = predict() ? "Adulterated" : "Pure";
+
+        int adultCount = 0, pureCount = 0;
+        for (Bitmap image : images) {
+            if (predict()) {
+                adultCount++;
+            } else {
+                pureCount++;
+            }
+        }
+
+        prediction = adultCount > pureCount ? "Adulterated" : "Pure";
 
         TextView predView = findViewById(R.id.prediction);
         predView.setText(prediction);
@@ -209,8 +220,8 @@ public class PredictActivity extends AppCompatActivity {
         // rescale to 300 * 400
         // 3 * 4
 
-        final int rows = 3;
-        final int columns = 4;
+        final int rows = 4;
+        final int columns = 3;
         final int chunks = rows * columns;
         final int height = bitmap.getHeight() / rows;
         final int width = bitmap.getWidth() / columns;
@@ -230,24 +241,23 @@ public class PredictActivity extends AppCompatActivity {
         return images;
     }
 
+    // Please refer to https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/experimental/support/java/README.md#ImageProcessor-Architecture
     private void initializeModel() {
-        ImageProcessor imageProcessor =
-                new ImageProcessor.Builder()
-                        .add(new ResizeOp(224, 224, ResizeOp.ResizeMethod.BILINEAR))
-                        .build();
+        // first 400 x 300, then divide to 12
+
+
+         imageProcessor = new ImageProcessor.Builder()
+                            .add(new ResizeOp(100, 100, ResizeOp.ResizeMethod.BILINEAR))
+                            .build();
 
         tImage = new TensorImage(DataType.UINT8);
-        tImage.load(bitmap);
-        tImage = imageProcessor.process(tImage);
-
-        probabilityBuffer =
-                TensorBuffer.createFixedSize(new int[]{1, 1001}, DataType.UINT8);
+        probabilityBuffer = TensorBuffer.createFixedSize(new int[]{1, 1001}, DataType.UINT8);
 
         // Initialise the model
         try {
             MappedByteBuffer tfliteModel
                     = FileUtil.loadMappedFile(this,
-                    "mobilenet_v1_1.0_224_quant.tflite");
+                    "model.tflite");
             tflite = new Interpreter(tfliteModel);
         } catch (IOException e) {
             Log.e("tfliteSupport", "Error reading model", e);
@@ -255,11 +265,20 @@ public class PredictActivity extends AppCompatActivity {
     }
 
     private boolean predict() {
+        tImage.load(bitmap);
+//        tImage = imageProcessor.process(tImage);
+
         if (tflite != null) {
             tflite.run(tImage.getBuffer(), probabilityBuffer.getBuffer());
         }
 
         float[] result = probabilityBuffer.getFloatArray();
+
+        for (float val : result) {
+            Log.e("model", String.valueOf(val));
+        }
+
+
 //        return result[0] <= 0.5;
         return Math.random() <= 0.5;
 
