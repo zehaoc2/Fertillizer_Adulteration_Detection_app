@@ -89,43 +89,32 @@ public class PredictActivity extends AppCompatActivity {
     private Interpreter tflite;
     private TensorImage tImage;
     private TensorBuffer probabilityBuffer;
-    private ImageProcessor imageProcessor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_predict);
 
+//        Log.e("model", "========================");
+
         initialization();
 
-        // model preprocessing
+        // model preprocessing, first resize the image into 300 * 400, then slice it into twelve 100 * 100 sub-images.
+        bitmap = Bitmap.createScaledBitmap(bitmap, 300, 400 ,true ) ;
         final ArrayList<Bitmap> images = splitImage();
-
-        // split image test code
-//        Button button = findViewById(R.id.button);
-//        button.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Bitmap image = images.get(count);
-//                ImageView imageView = findViewById(R.id.image);
-//                imageView.setImageBitmap(image);
-//                count = (count + 1) % 12;
-//            }
-//        });
 
         // initialize model & predict
         initializeModel();
 
-        int adultCount = 0, pureCount = 0;
+        // Our criteria of determining adulteration: if more than 8 sub-images is predicted as pure, then the image is predicted as pure
+        int pureCount = 0;
         for (Bitmap image : images) {
-            if (predict()) {
-                adultCount++;
-            } else {
+            if (!predict(image)) {
                 pureCount++;
             }
         }
-
-        prediction = adultCount > pureCount ? "Adulterated" : "Pure";
+        prediction = pureCount >= 8 ? "Pure" : "Adulterated";
+        //        Log.e("model", adultCount + "," + pureCount);
 
         TextView predView = findViewById(R.id.prediction);
         predView.setText(prediction);
@@ -243,45 +232,26 @@ public class PredictActivity extends AppCompatActivity {
 
     // Please refer to https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/experimental/support/java/README.md#ImageProcessor-Architecture
     private void initializeModel() {
-        // first 400 x 300, then divide to 12
+        tImage = new TensorImage(DataType.FLOAT32);
+        probabilityBuffer = TensorBuffer.createFixedSize(new int[]{1, 1}, DataType.FLOAT32);
 
-
-         imageProcessor = new ImageProcessor.Builder()
-                            .add(new ResizeOp(100, 100, ResizeOp.ResizeMethod.BILINEAR))
-                            .build();
-
-        tImage = new TensorImage(DataType.UINT8);
-        probabilityBuffer = TensorBuffer.createFixedSize(new int[]{1, 1001}, DataType.UINT8);
-
-        // Initialise the model
         try {
-            MappedByteBuffer tfliteModel
-                    = FileUtil.loadMappedFile(this,
-                    "model.tflite");
-            tflite = new Interpreter(tfliteModel);
+            tflite = new Interpreter(FileUtil.loadMappedFile(this,"model.tflite"));
         } catch (IOException e) {
             Log.e("tfliteSupport", "Error reading model", e);
         }
     }
 
-    private boolean predict() {
-        tImage.load(bitmap);
-//        tImage = imageProcessor.process(tImage);
-
+    // return true if adulterated, false if pure
+    private boolean predict(Bitmap image) {
+//        ImageView imageView = findViewById(R.id.image);
+//        imageView.setImageBitmap(image);
+        tImage.load(image);
         if (tflite != null) {
             tflite.run(tImage.getBuffer(), probabilityBuffer.getBuffer());
         }
 
-        float[] result = probabilityBuffer.getFloatArray();
-
-        for (float val : result) {
-            Log.e("model", String.valueOf(val));
-        }
-
-
-//        return result[0] <= 0.5;
-        return Math.random() <= 0.5;
-
+        return probabilityBuffer.getFloatArray()[0] < 0.5;
     }
 
     /** ====================================== Save to Database ================================================= **/
