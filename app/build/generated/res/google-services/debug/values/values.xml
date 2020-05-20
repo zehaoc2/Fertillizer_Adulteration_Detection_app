@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_web_client_id" translatable="false">130686749427-vr1favi7fcq5a0m40b3cae6i5mmflo8p.apps.googleusercontent.com</string>
+    <string name="firebase_database_url" translatable="false">https://fertilizer-252e7.firebaseio.com</string>
+    <string name="gcm_defaultSenderId" translatable="false">130686749427</string>
+    <string name="google_api_key" translatable="false">AIzaSyCSEaaRh-vRw_mp7AAX3BaYR-MMRXgXcbg</string>
+    <string name="google_app_id" translatable="false">1:130686749427:android:fcbf53063d51c3ee9d8586</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyCSEaaRh-vRw_mp7AAX3BaYR-MMRXgXcbg</string>
+    <string name="google_storage_bucket" translatable="false">fertilizer-252e7.appspot.com</string>
+    <string name="project_id" translatable="false">fertilizer-252e7</string>
+</resources>
