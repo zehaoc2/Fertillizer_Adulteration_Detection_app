@@ -19,6 +19,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -49,6 +50,8 @@ import com.google.gson.reflect.TypeToken;
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
 import org.tensorflow.lite.support.common.FileUtil;
+import org.tensorflow.lite.support.common.TensorProcessor;
+import org.tensorflow.lite.support.common.ops.NormalizeOp;
 import org.tensorflow.lite.support.image.ImageProcessor;
 import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.image.ops.ResizeOp;
@@ -60,6 +63,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -87,15 +92,15 @@ public class PredictActivity extends AppCompatActivity {
     private String store, district, village;
 
     private Interpreter tflite;
-    private TensorImage tImage;
-    private TensorBuffer probabilityBuffer;
+    private final Interpreter.Options tfliteOptions = new Interpreter.Options();
+    private ByteBuffer imgData;
+    private final int X = 100, Y = 100;
+    private int[] intValues = new int[X * Y];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_predict);
-
-//        Log.e("model", "========================");
 
         initialization();
 
@@ -114,11 +119,12 @@ public class PredictActivity extends AppCompatActivity {
             }
         }
         prediction = pureCount >= 8 ? "Pure" : "Adulterated";
-        //        Log.e("model", adultCount + "," + pureCount);
 
         TextView predView = findViewById(R.id.prediction);
         predView.setText(prediction);
     }
+
+    /** ======================================= Initialization ================================================ **/
 
     private void initialization() {
         // retrieve data from previous activity
@@ -205,10 +211,8 @@ public class PredictActivity extends AppCompatActivity {
 
     /** ======================================= Model ================================================ **/
 
+    // Split each image into 12 sub-images to increase robustness
     private ArrayList<Bitmap> splitImage() {
-        // rescale to 300 * 400
-        // 3 * 4
-
         final int rows = 4;
         final int columns = 3;
         final int chunks = rows * columns;
@@ -230,28 +234,56 @@ public class PredictActivity extends AppCompatActivity {
         return images;
     }
 
-    // Please refer to https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/experimental/support/java/README.md#ImageProcessor-Architecture
+    // Please refer to the demo from TensorFlow official github site:
+    // run "git clone https://www.github.com/tensorflow/tensorflow" and find its demo at /tensorflow/lite/java/demo
+    // Useful link: https://medium.com/tensorflow/using-tensorflow-lite-on-android-9bbc9cb7d69d
     private void initializeModel() {
-        tImage = new TensorImage(DataType.FLOAT32);
-        probabilityBuffer = TensorBuffer.createFixedSize(new int[]{1, 1}, DataType.FLOAT32);
+        final int DIM_BATCH_SIZE = 1, DIM_PIXEL_SIZE = 3, NumBytesPerChannel = 4;
+
+        imgData = ByteBuffer.allocateDirect(
+                        DIM_BATCH_SIZE
+                                * X
+                                * Y
+                                * DIM_PIXEL_SIZE
+                                * NumBytesPerChannel);
+        imgData.order(ByteOrder.nativeOrder());
 
         try {
-            tflite = new Interpreter(FileUtil.loadMappedFile(this,"model.tflite"));
+            tflite = new Interpreter(FileUtil.loadMappedFile(this,"model.tflite"), tfliteOptions);
         } catch (IOException e) {
             Log.e("tfliteSupport", "Error reading model", e);
         }
     }
 
-    // return true if adulterated, false if pure
+    // convert bitmap of each sub-image to ByteBuffer to feed into the TensorFlowLite.
+    private void convertBitmapToByteBuffer(Bitmap bitmap) {
+        if (imgData == null) {
+            return;
+        }
+        imgData.rewind();
+        bitmap.getPixels(intValues, 0, bitmap.getWidth(), 0, 0, bitmap.getWidth(), bitmap.getHeight());
+        int pixel = 0;
+        for (int i = 0; i < X; ++i) {
+            for (int j = 0; j < Y; ++j) {
+                final int val = intValues[pixel++];
+
+                imgData.putFloat(((val>> 16) & 0xFF) / 255.f);
+                imgData.putFloat(((val>> 8) & 0xFF) / 255.f);
+                imgData.putFloat((val & 0xFF) / 255.f);
+            }
+        }
+    }
+
+    // return true if adulterated (probability < 0.5), false if pure (probability >= 0.5)
     private boolean predict(Bitmap image) {
-//        ImageView imageView = findViewById(R.id.image);
-//        imageView.setImageBitmap(image);
-        tImage.load(image);
+        convertBitmapToByteBuffer(image);
+
+        float[][] result = new float[1][1];
         if (tflite != null) {
-            tflite.run(tImage.getBuffer(), probabilityBuffer.getBuffer());
+            tflite.run(imgData, result);
         }
 
-        return probabilityBuffer.getFloatArray()[0] < 0.5;
+        return result[0][0] < 0.5;
     }
 
     /** ====================================== Save to Database ================================================= **/
